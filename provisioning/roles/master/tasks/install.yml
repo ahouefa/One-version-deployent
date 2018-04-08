@@ -1,4 +1,28 @@
 ---
 #for all installation
-- name: install nginx
-  apt: name=nginx state=present
+#dd php7 apt repository 
+- apt_repository:
+    repo: deb http://packages.dotdeb.org jessie all
+    state: present
+
+#Add php7 apt repository sources
+- apt_repository:
+    repo: deb-src http://packages.dotdeb.org jessie all
+    state: present
+
+- name: Add an Apt signing key
+  apt_key:
+    url: https://www.dotdeb.org/dotdeb.gpg
+    state: present
+
+- name: Update apt packages
+  become: true
+  apt:
+    update_cache: yes
+
+- name: Install required apt packages
+  apt: name={{item}} state=installed
+  with_items:
+    - nginx
+    - php7.0-cli
+    - php7.0-fpm
