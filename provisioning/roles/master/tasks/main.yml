@@ -1,0 +1,86 @@
+---
+# tasks file for master
+- include: "install.yml"
+#
+#- include: "config.yml"
+# tasks file for master
+- name: Customize the ssh login message
+  template:
+  args:
+    src: motd
+    dest: /etc/motd
+
+- name: Make login message permanent
+  lineinfile:
+  args:
+    dest: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - regexp: "#PrintLastLog yes "
+      line:    "PrintLastLog no"
+
+- name: Creates web app test directory 
+  file:
+    path: /var/www/test
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: 0775
+    recurse: yes
+
+- name: Creates example.com directory
+  file:
+    path: /var/www/test/example.com
+    state: directory
+
+- name: create index page for example.com
+  template:
+  args:
+    src: index.php
+    dest: /var/www/test/example.com/index.php
+
+- name: Configure nginx reverse-proxy for web app
+  template:
+  args:
+    src: nginx.conf
+    dest: /etc/nginx/nginx.conf
+#  notify: reload nginx
+
+- name: Ensure group "test" exists if not create it
+  group:
+    name: test
+    state: present
+
+- name: Create user assessment and add it to test group
+  user:
+    name: assessment
+    password: "{{ 'password' | password_hash('sha512') }}"
+    shell: /bin/bash
+    groups: test
+    update_password: on_create
+  register: assessment
+
+- name: Force assessment to change password
+  shell: chage -d 0 assessment
+  when: assessment.changed
+
+- name: Give access to an unprivileged user to reload nginx
+  template:
+  args:
+    src: test
+    dest: /etc/sudoers.d/test
+#  notify: reload nginx
+- name: give acces to unprivilleged user to edit /etc/network/interfaces
+  file:
+    path: /etc/network/interfaces
+    owner: assessment
+    group: test
+    mode: 0644
+  become: yes
+
+- name: Restart service nginx
+  service:
+    name: nginx
+    state: restarted
+

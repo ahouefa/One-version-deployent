@@ -1,0 +1,4 @@
+---
+#for all installation
+- name: install nginx
+  apt: name=nginx state=present

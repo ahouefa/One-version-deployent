@@ -1,0 +1,10 @@
+---
+# handlers file for master
+#- name: restart nginx
+#  systemd: name=nginx state=restarted
+
+#- name: restart sshd
+#  systemd: name=sshd state=restarted
+
+#- name: reload nginx
+#  systemd: name=nginx state=reloaded
